@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rift Possession</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Screen 1: Start Screen (Game Mode Selection) -->
+    <section id="start-screen" class="screen">
+      <!-- Language Selection Dropdown at Top Corner -->
+      <div class="lang-selector-corner">
+        <label for="lang-select" class="lang-label">
+          <span class="lang-globe-icon">🌐</span>
+        </label>
+        <select id="lang-select" class="lang-dropdown" aria-label="Select Language">
+          <option value="en">English (EN)</option>
+          <option value="tr">Türkçe (TR)</option>
+          <option value="ko">한국어 (KO)</option>
+        </select>
+      </div>
+
+      <div class="lobby-card">
+        <div class="lobby-brand">
+          <div class="lobby-badge" data-i18n="lobbyBadge">LOL GRID STRATEGY</div>
+          <h1 class="lobby-title" data-i18n="lobbyTitle">RIFT POSSESSION</h1>
+          <p class="lobby-subtitle" data-i18n="lobbySubtitle">Claim hex criteria with League of Legends champions</p>
+          <button id="btn-how-to-play" class="guide-trigger-btn" type="button">
+            <span class="guide-btn-icon">📖</span> <span data-i18n="howToPlayBtn">HOW TO PLAY & RULES</span>
+          </button>
+        </div>
+
+        <div class="mode-selection-grid">
+          <button class="mode-card-btn" id="btn-mode-same-screen">
+            <div class="mode-icon">⚔️</div>
+            <div class="mode-info">
+              <span class="mode-title" data-i18n="modeSameScreenTitle">Same Screen</span>
+              <span class="mode-desc" data-i18n="modeSameScreenDesc">2 Players take turns on this single device</span>
+            </div>
+          </button>
+
+          <button class="mode-card-btn" id="btn-mode-online-summoners">
+            <div class="mode-icon">🌐</div>
+            <div class="mode-info">
+              <span class="mode-title" data-i18n="modeOnlineSummonersTitle">Online Summoners</span>
+              <span class="mode-desc" data-i18n="modeOnlineSummonersDesc">Matchmake with an online opponent with matching options</span>
+            </div>
+          </button>
+
+          <button class="mode-card-btn" id="btn-mode-online-friend">
+            <div class="mode-icon">👥</div>
+            <div class="mode-info">
+              <span class="mode-title" data-i18n="modeOnlineFriendTitle">Online With a Friend</span>
+              <span class="mode-desc" data-i18n="modeOnlineFriendDesc">Create or enter a custom Room Code to duel</span>
+            </div>
+          </button>
+
+          <button class="mode-card-btn" id="btn-mode-solo">
+            <div class="mode-icon">👑</div>
+            <div class="mode-info">
+              <span class="mode-title" data-i18n="modeSoloTitle">Solo-Bolo</span>
+              <span class="mode-desc" data-i18n="modeSoloDesc">Single player high score challenge. Re-claim hexes for combo points!</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Modal 0: How to Play / Guide Modal -->
+    <div id="how-to-play-modal" class="modal-overlay">
+      <div class="modal-card how-to-play-card">
+        <div class="modal-header">
+          <div class="modal-badge" data-i18n="guideBadge">SUMMONER'S MANUAL</div>
+          <h2 class="modal-title" data-i18n="guideTitle">HOW TO PLAY RIFT POSSESSION</h2>
+          <p class="modal-subtitle" data-i18n="guideSubtitle">Master the 37-hex grid with strategic champion knowledge</p>
+        </div>
+
+        <div class="how-to-play-body">
+          <div class="guide-section">
+            <div class="guide-step-header">
+              <span class="guide-step-num">1</span>
+              <h3 class="guide-step-title" data-i18n="guideStep1Title">Objective & The Hex Grid</h3>
+            </div>
+            <p class="guide-step-text" data-i18n="guideStep1Text">
+              The board consists of <strong>37 hexagonal tiles</strong> arranged in a radius-3 grid. Each hex has a specific category criterion (<strong>Region</strong>, <strong>Role</strong>, <strong>Skin Set</strong>, <strong>Mechanic</strong>, <strong>Species</strong>, <strong>Release Year</strong>, <strong>Resource</strong>, <strong>Range</strong>, or <strong>Gender</strong>). Your goal is to capture more tiles than your rival!
+            </p>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-step-header">
+              <span class="guide-step-num">2</span>
+              <h3 class="guide-step-title" data-i18n="guideStep2Title">How a Turn Works</h3>
+            </div>
+            <ul class="guide-rules-list">
+              <li><strong data-i18n="guideRule1Title">Select a Hex:</strong> <span data-i18n="guideRule1Desc">Click an eligible tile on the grid.</span></li>
+              <li><strong data-i18n="guideRule2Title">Name a Valid Champion:</strong> <span data-i18n="guideRule2Desc">Type any League champion that satisfies that tile's requirement (e.g., Ionia, True Damage, Spirit Blossom, Yordle) and hit Enter or submit.</span></li>
+              <li><strong data-i18n="guideRule3Title">Hex Claimed:</strong> <span data-i18n="guideRule3Desc">The tile is painted in your team's color with the champion's portrait!</span></li>
+            </ul>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-step-header">
+              <span class="guide-step-num">3</span>
+              <h3 class="guide-step-title" data-i18n="guideStep3Title">Special Match Rules (Toggles)</h3>
+            </div>
+            <div class="guide-rules-grid">
+              <div class="guide-rule-card">
+                <div class="rule-card-badge" data-i18n="guideRuleChainingBadge">HEX CHAINING</div>
+                <p data-i18n="guideRuleChainingDesc">When <strong>ON</strong>, after your opening turn you must claim a hex that is <em>adjacent (touching)</em> to your existing claimed territory. When <strong>OFF</strong>, you can pick any tile on the entire board.</p>
+              </div>
+              <div class="guide-rule-card">
+                <div class="rule-card-badge" data-i18n="guideRuleLockingBadge">CHAMPION LOCKING</div>
+                <p data-i18n="guideRuleLockingDesc">When <strong>ON</strong>, once a champion is successfully used anywhere, it is locked and <em>cannot be used again</em> by either player for the rest of the game.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="guide-section">
+            <div class="guide-step-header">
+              <span class="guide-step-num">4</span>
+              <h3 class="guide-step-title" data-i18n="guideStep4Title">Game Modes</h3>
+            </div>
+            <div class="guide-modes-summary">
+              <div class="mode-pill"><span class="pill-icon">⚔️</span> <strong data-i18n="guideModeSameScreenTitle">Same Screen:</strong> <span data-i18n="guideModeSameScreenDesc">Pass-and-play duel on 1 device.</span></div>
+              <div class="mode-pill"><span class="pill-icon">🌐</span> <strong data-i18n="guideModeOnlineSummonersTitle">Online Summoners:</strong> <span data-i18n="guideModeOnlineSummonersDesc">Automatic matchmaking with real players online.</span></div>
+              <div class="mode-pill"><span class="pill-icon">👥</span> <strong data-i18n="guideModeOnlineFriendTitle">Online With a Friend:</strong> <span data-i18n="guideModeOnlineFriendDesc">Enter a custom Room Code to duel a buddy.</span></div>
+              <div class="mode-pill"><span class="pill-icon">👑</span> <strong data-i18n="guideModeSoloTitle">Solo-Bolo:</strong> <span data-i18n="guideModeSoloDesc">Re-claim tiles to stack escalating combo points and set the ultimate high score!</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer how-to-play-footer">
+          <label class="dont-show-checkbox">
+            <input type="checkbox" id="chk-dont-show-again">
+            <span data-i18n="dontShowAgain">Don't show automatically next time</span>
+          </label>
+          <button id="btn-close-how-to-play" class="primary-btn guide-enter-btn" data-i18n="enterTheRiftBtn">ENTER THE RIFT</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: Game Options Screen -->
+    <section id="options-screen" class="screen hidden">
+      <div class="lobby-card">
+        <div class="lobby-brand">
+          <div class="lobby-badge" id="selected-mode-badge">GAME MODE</div>
+          <h2 class="lobby-title" id="selected-mode-title">GAME OPTIONS</h2>
+          <p class="lobby-subtitle" id="selected-mode-subtitle">Configure match rules before entering the Rift</p>
+        </div>
+
+        <div class="lobby-form">
+          <!-- Room Code input: only visible in 'Online With a Friend' mode -->
+          <div class="form-group hidden" id="room-code-group">
+            <label for="room-input" data-i18n="roomCodeLabel">Room Code</label>
+            <div class="room-input-row">
+              <input type="text" id="room-input" placeholder="ENTER ROOM CODE (e.g. DUEL7)" data-i18n-placeholder="roomCodePlaceholder" maxlength="8" autocomplete="off" spellcheck="false">
+            </div>
+            <p class="form-hint" data-i18n="roomCodeHint">Both players must write the same room code and pick the same settings.</p>
+          </div>
+
+          <div class="settings-header">
+            <span data-i18n="matchRulesHeading">Match Rules</span>
+          </div>
+
+          <div class="toggles">
+            <label class="toggle-card">
+              <div class="toggle-header">
+                <input type="checkbox" id="chain-toggle">
+                <span class="label-title" data-i18n="hexChainingTitle">Hex Chaining</span>
+              </div>
+              <span class="desc" data-i18n="hexChainingDesc">Continuous path propagation across matches</span>
+            </label>
+
+            <label class="toggle-card">
+              <div class="toggle-header">
+                <input type="checkbox" id="locking-toggle" checked>
+                <span class="label-title" data-i18n="champLockingTitle">Champion Locking</span>
+              </div>
+              <span class="desc" data-i18n="champLockingDesc">Locked champions cannot be reused</span>
+            </label>
+
+            <div class="toggle-card timer-select-card">
+              <span class="label-title" data-i18n="turnTimerTitle">Turn Timer</span>
+              <select id="timer-select">
+                <option value="30" data-i18n="timer30s">30 Seconds</option>
+                <option value="60" data-i18n="timer60s">1 Minute</option>
+                <option value="0" data-i18n="timerUnlimited">Unlimited</option>
+              </select>
+              <span class="desc" data-i18n="turnTimerDesc">Time allowed per turn</span>
+            </div>
+          </div>
+
+          <p id="options-status" class="form-hint"></p>
+
+          <div class="options-actions-row">
+            <button id="options-back-btn" class="secondary-btn" data-i18n="backBtn">← BACK</button>
+            <button id="options-start-btn" class="primary-btn" data-i18n="startGameBtn">START GAME</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2: Game Playing Area View -->
+    <section id="game-screen" class="screen hidden">
+      <!-- Edge Top Bar: Room on left edge, Timer in center, Live status on right edge -->
+      <header id="game-header">
+        <div class="header-left">
+          <div class="room-pill">ROOM <span id="active-room-display">----</span></div>
+        </div>
+
+        <div id="status-panel">
+          <div class="status-top-row">
+            <h2 id="turn-announcement">Waiting for match...</h2>
+            <div id="timer-numeric" class="timer-numeric-pill">--</div>
+          </div>
+          <div id="timer-bar"><div id="timer-progress"></div></div>
+          <p id="system-msg">Waiting for opponent to connect...</p>
+        </div>
+
+        <div class="header-right">
+          <button id="btn-reopen-endgame" class="header-mini-btn endgame-btn hidden" title="Reopen match end options" data-i18n="headerBtnMatchOptions">MATCH OPTIONS</button>
+          <div class="menu-btn-wrapper">
+            <button id="btn-leave-game" class="header-mini-btn">MENU</button>
+            <div id="menu-restart-badge" class="menu-restart-notification hidden">
+              <span class="pulse-dot"></span> Opponent wants to restart
+            </div>
+          </div>
+          <div class="status-indicator-live"><span class="dot"></span> LIVE MATCH</div>
+        </div>
+      </header>
+
+      <!-- Main Board: Balanced view with clean breathing margins -->
+      <main id="board-container">
+        <svg id="hex-grid" viewBox="-270 -245 540 490"></svg>
+      </main>
+
+      <!-- Dynamic Bottom Bar: 2-player (Blue/Red) or Solo-Bolo Scoreboard -->
+      <footer id="action-panel">
+        <!-- 2-PLAYER: Blue Side Score Badge -->
+        <div class="side-badge blue-side-card" id="badge-p1">
+          <div class="side-title" id="p1-title">BLUE SIDE</div>
+          <div class="side-score-box">
+            <span class="side-score-num" id="p1-score">0</span>
+            <span class="side-score-lbl">HEXES</span>
+          </div>
+        </div>
+
+        <!-- SOLO-BOLO: Hexes Captured Badge -->
+        <div class="side-badge solo-side-card solo-only hidden" id="badge-solo-hexes">
+          <div class="side-title">BOARD PROGRESS</div>
+          <div class="side-score-box">
+            <span class="side-score-num" id="solo-hex-count">0/37</span>
+            <span class="side-score-lbl">HEXES</span>
+          </div>
+        </div>
+
+        <!-- Champion Name Input in the Center -->
+        <div class="center-input-box">
+          <div id="selected-criteria-display">Selected: <em>None</em></div>
+          <div class="input-row">
+            <div class="input-wrapper">
+              <input type="text" id="champ-input" placeholder="Type Champion name to claim hex..." disabled autocomplete="off" spellcheck="false">
+              <div id="autocomplete-list" class="autocomplete-list hidden"></div>
+            </div>
+            <button id="submit-btn" class="input-submit-btn" disabled>CLAIM</button>
+          </div>
+        </div>
+
+        <!-- SOLO-BOLO: Total Points Badge -->
+        <div class="side-badge solo-score-card solo-only hidden" id="badge-solo-points">
+          <div class="side-title">SOLO POINTS</div>
+          <div class="side-score-box">
+            <span class="side-score-num" id="solo-points">0</span>
+            <span class="side-score-lbl" id="solo-combo-lbl">PTS</span>
+          </div>
+        </div>
+
+        <!-- 2-PLAYER: Red Side Score Badge -->
+        <div class="side-badge red-side-card" id="badge-p2">
+          <div class="side-title" id="p2-title">RED SIDE</div>
+          <div class="side-score-box">
+            <span class="side-score-num" id="p2-score">0</span>
+            <span class="side-score-lbl">HEXES</span>
+          </div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Modal 1: End Game Options Screen Modal -->
+    <div id="endgame-modal" class="modal-overlay hidden">
+      <div class="modal-card endgame-card">
+        <div class="modal-header">
+          <div class="modal-badge" id="endgame-badge" data-i18n="endgameVictory">VICTORY</div>
+          <h2 class="modal-title" id="endgame-title" data-i18n="endgameMatchCompleted">MATCH COMPLETED</h2>
+          <p class="modal-subtitle" id="endgame-subtitle" data-i18n="endgameChooseNextStep">Choose your next step</p>
+        </div>
+
+        <!-- 2-Player Score Summary -->
+        <div class="endgame-score-summary" id="endgame-score-summary">
+          <div class="endgame-player p1-summary">
+            <span class="endgame-player-name" id="endgame-p1-title" data-i18n="p1Title">BLUE SIDE</span>
+            <span class="endgame-player-score" id="endgame-p1-score">0</span>
+            <span class="endgame-player-label" data-i18n="endgameHexesLabel">HEXES</span>
+          </div>
+          <div class="endgame-vs" id="endgame-vs-divider">VS</div>
+          <div class="endgame-player p2-summary" id="endgame-p2-summary">
+            <span class="endgame-player-name" id="endgame-p2-title" data-i18n="p2Title">RED SIDE</span>
+            <span class="endgame-player-score" id="endgame-p2-score">0</span>
+            <span class="endgame-player-label" data-i18n="endgameHexesLabel">HEXES</span>
+          </div>
+        </div>
+
+        <!-- Solo-Bolo Summary -->
+        <div class="endgame-solo-summary hidden" id="endgame-solo-summary">
+          <div class="endgame-solo-stat">
+            <span class="stat-num" id="endgame-solo-score">0</span>
+            <span class="stat-lbl" data-i18n="endgameTotalSoloPoints">TOTAL SOLO POINTS</span>
+          </div>
+          <div class="endgame-solo-divider"></div>
+          <div class="endgame-solo-stat">
+            <span class="stat-num" id="endgame-solo-hexes">37/37</span>
+            <span class="stat-lbl" data-i18n="endgameHexesClaimed">HEXES CLAIMED</span>
+          </div>
+        </div>
+
+        <!-- Rematch Status Notification -->
+        <div id="rematch-status-banner" class="rematch-banner hidden">
+          <span id="rematch-status-text">Waiting for opponent to accept rematch... (1/2)</span>
+        </div>
+
+        <!-- End Game Action Options -->
+        <div class="endgame-options-grid">
+          <button id="btn-endgame-rematch" class="endgame-action-btn primary-action">
+            <span class="btn-icon">🔄</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="endgameBtnRematch">Rematch</span>
+              <span class="btn-sub" id="rematch-sub-label" data-i18n="endgameRematchSub">Play again with current rules (Both players must accept)</span>
+            </div>
+          </button>
+
+          <button id="btn-endgame-best-champs" class="endgame-action-btn">
+            <span class="btn-icon">⭐</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="endgameBtnBestChamps">Best Champions</span>
+              <span class="btn-sub" id="best-champs-sub-label" data-i18n="endgameBestChampsSub">Ranked optimal champions for this exact board & rules</span>
+            </div>
+          </button>
+
+          <button id="btn-endgame-statistics" class="endgame-action-btn">
+            <span class="btn-icon">📊</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="endgameBtnStatistics">Statistics</span>
+              <span class="btn-sub" data-i18n="endgameStatisticsSub">Hex control, champion pool, retakes, and tactical data</span>
+            </div>
+          </button>
+
+          <button id="btn-endgame-review" class="endgame-action-btn">
+            <span class="btn-icon">🔍</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="endgameBtnReview">Review</span>
+              <span class="btn-sub" data-i18n="endgameReviewSub">Inspect the map, tiles, and captured territory freely</span>
+            </div>
+          </button>
+
+          <button id="btn-endgame-menu" class="endgame-action-btn danger-action">
+            <span class="btn-icon">🏠</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="endgameBtnMenu">Back to the Menu</span>
+              <span class="btn-sub" data-i18n="endgameMenuSub">Exit session and return to game modes</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 2: Best / Optimal Champions Modal -->
+    <div id="best-champs-modal" class="modal-overlay hidden">
+      <div class="modal-card best-champs-card">
+        <div class="modal-header">
+          <div class="modal-badge" data-i18n="bestChampsBadge">TACTICAL INTEL</div>
+          <h2 class="modal-title" data-i18n="bestChampsTitle">OPTIMAL CHAMPIONS</h2>
+          <p class="modal-subtitle" id="best-champs-rules-note">Computed based on current board and active rules (Hex Chaining: ON/OFF)</p>
+        </div>
+
+        <div class="modal-filter-bar">
+          <input type="text" id="best-champs-search" placeholder="Search champion name..." data-i18n-placeholder="bestChampsSearchPlaceholder" autocomplete="off">
+          <span class="search-count" id="best-champs-count">Showing optimal champions</span>
+        </div>
+
+        <div class="best-champs-list" id="best-champs-list">
+          <!-- Filled dynamically via JS -->
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-close-best-champs" class="primary-btn" data-i18n="closeReturnBtn">CLOSE & RETURN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 3: In-Depth Match Statistics Modal -->
+    <div id="statistics-modal" class="modal-overlay hidden">
+      <div class="modal-card statistics-card">
+        <div class="modal-header">
+          <div class="modal-badge" data-i18n="statsBadge">POST-MATCH REPORT</div>
+          <h2 class="modal-title" data-i18n="statsTitle">MATCH STATISTICS</h2>
+          <p class="modal-subtitle" data-i18n="statsSubtitle">Comparative performance & tactical analytics</p>
+        </div>
+
+        <div class="stats-modal-body" id="stats-modal-body">
+          <div class="stats-overview-grid" id="stats-overview-grid">
+            <!-- Dynamic cards for Blue Side vs Red Side -->
+          </div>
+
+          <div class="stats-section-title" data-i18n="statsSectionChamps">CHAMPIONS DRAFTED & PLAYED</div>
+          <div class="stats-champs-comparison" id="stats-champs-comparison">
+            <!-- Dynamic lists of champions written by each player -->
+          </div>
+
+          <div class="stats-section-title" data-i18n="statsSectionHighlights">TACTICAL HIGHLIGHTS</div>
+          <div class="stats-highlights" id="stats-highlights">
+            <!-- Creative awards / highlights (e.g. Hex Reclaimer, Hex Sniper, Speed Demon) -->
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-close-statistics" class="primary-btn" data-i18n="closeReturnBtn">CLOSE & RETURN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal 4: In-Game Pause / Menu Modal -->
+    <div id="game-menu-modal" class="modal-overlay hidden">
+      <div class="modal-card game-menu-card">
+        <div class="modal-header">
+          <div class="modal-badge" data-i18n="menuBadge">GAME MENU</div>
+          <h2 class="modal-title" data-i18n="menuTitle">MATCH PAUSED</h2>
+          <p class="modal-subtitle" data-i18n="menuSubtitle">Choose an action</p>
+        </div>
+
+        <div class="game-menu-body">
+          <button id="btn-menu-resume" class="endgame-action-btn primary-action">
+            <span class="btn-icon">▶️</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="menuResumeMain">Return to the Game</span>
+              <span class="btn-sub" data-i18n="menuResumeSub">Resume current match and continue playing</span>
+            </div>
+          </button>
+
+          <button id="btn-menu-restart" class="endgame-action-btn">
+            <span class="btn-icon">🔄</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="menuRestartMain">Restart</span>
+              <span class="btn-sub" id="menu-restart-sub" data-i18n="menuRestartSub">Restart match with a new board and current rules</span>
+            </div>
+          </button>
+
+          <button id="btn-menu-exit" class="endgame-action-btn danger-action">
+            <span class="btn-icon">🚪</span>
+            <div class="btn-text">
+              <span class="btn-main" data-i18n="menuExitMain">Return to the Menu</span>
+              <span class="btn-sub" data-i18n="menuExitSub">Leave this arena and return to mode selection</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
